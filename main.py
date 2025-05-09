@@ -66,6 +66,6 @@ if __name__ == "__main__":
         for dict in stats:
             print(dict)
         print("CROSS VALIDATION SCORES:")
-        with open("cv.pkl", "rb") as f:
+        with open("cache/cv.pkl", "rb") as f:
             cv = pickle.load(f)
         print(cv)

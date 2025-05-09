@@ -1,5 +1,6 @@
 from sklearn.svm import SVR
 
+
 # NOT USED NOW
 class VehicleInsuranceModel:
     def __init__(self, **params):
@@ -16,3 +17,4 @@ class VehicleInsuranceModel:
 
     def get_params(self, deep=True):
         return self.model.get_params()
+
