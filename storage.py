@@ -39,3 +39,20 @@ class Storage:
         with open(rows_read_path, "w") as rows:
             rows.write("%d" % self.train_data.shape[0])
 
+    @staticmethod
+    def calc_metaparams(self, batch):
+        batch_mean = {}
+        batch_mean["INSURED_VALUE"] = pd.mean(batch["INSURED_VALUE"])
+        batch_mean["PREMIUM"] = pd.mean(batch["PREMIUM"])
+        batch_mean["SEATS_NUM"] = pd.mean(batch["SEATS_NUM"])
+        batch_mean["CARRYING_CAPACITY"] = pd.mean(batch["CARRYING_CAPACITY"])
+        batch_mean["CCM_TON"] = pd.mean(batch["CCM_TON"])
+        batch_mean["CLAIM_PAID"] = pd.mean(batch["CLAIM_PAID"])
+        batch_std = {}
+        batch_std["INSURED_VALUE"] = pd.std(batch["INSURED_VALUE"])
+        batch_std["PREMIUM"] = pd.std(batch["PREMIUM"])
+        batch_std["SEATS_NUM"] = pd.std(batch["SEATS_NUM"])
+        batch_std["CARRYING_CAPACITY"] = pd.std(batch["CARRYING_CAPACITY"])
+        batch_std["CCM_TON"] = pd.std(batch["CCM_TON"])
+        batch_std["CLAIM_PAID"] = pd.std(batch["CLAIM_PAID"])
+        return batch_mean, batch_std
