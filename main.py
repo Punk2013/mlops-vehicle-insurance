@@ -12,6 +12,8 @@ from preprocess import Preprocessor
 from storage import Storage
 from validation import Validator
 
+default_batchsize = 2000
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="mlops")
     parser.add_argument(
@@ -31,7 +33,7 @@ if __name__ == "__main__":
         pred = model.predict(X)
         print(pd.DataFrame(pred).value_counts())
     elif args.mode == "update":
-        batchsize = 2000  # adjust how much data is added
+        batchsize = default_batchsize
         storage = Storage(batchsize)
         batch = storage.get_batch()
         print(f"NEW BATCH:\n{batch}")
@@ -64,7 +66,12 @@ if __name__ == "__main__":
         print("DATA QUALITY:")
         for dict in stats:
             print(dict)
-        # print("CROSS VALIDATION SCORES:")
-        # model = Maintainer.load_main_model()
-        # cv = Validator.cv(model, X, y)
-        # print(cv)
+        storage = Storage(default_batchsize)
+        storage.load_train_data()
+        df = Analyser.basic_cleanup(storage.train_data)
+        prep = Preprocessor("inference")
+        X, y = prep.preprocess(prep.preprocess_nans(df))
+        model = Maintainer.load_main_model()
+        cv = Validator.cv(model, X, y)
+        print("CROSS VALIDATION SCORES:")
+        print(cv)
