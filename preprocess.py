@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-cat_cols = ["SEX", "INSR_TYPE", "TYPE_VEHICLE", "MAKE", "USAGE"]
+cat_cols = ["SEX", "INSR_TYPE", "TYPE_VEHICLE", "USAGE"]
 num_cols = [
     "INSR_BEGIN",
     "INSR_END",
@@ -41,7 +41,7 @@ class Preprocessor:
     def __init__(self, mode):
         self.transformer = ColumnTransformer(
             transformers=[
-                ("cat", OneHotEncoder(), cat_cols),
+                ("cat", OneHotEncoder(drop='first', sparse_output=False, handle_unknown='ignore'), cat_cols),
                 ("num", StandardScaler(), num_cols_new),
             ]
         )
@@ -56,7 +56,7 @@ class Preprocessor:
                 df[col] = df[col].fillna(df[col].mode()[0])
                 continue
             if df[col].isna().sum() / df.shape[0] < 0.05:
-                df.dropna(subset=col, inplace=True)
+                df = df.dropna(subset=col)
             else:
                 df[col] = df.groupby("TYPE_VEHICLE")[col].transform(
                     lambda x: x.fillna(x.mode()[0] if not x.mode().empty else None)
@@ -67,7 +67,7 @@ class Preprocessor:
                 df[col] = df[col].fillna(0)
                 continue
             if df[col].isna().sum() / df.shape[0] < 0.05:
-                df.dropna(subset=col, inplace=True)
+                df = df.dropna(subset=col)
             else:
                 df[col] = df.groupby("TYPE_VEHICLE")[col].transform(
                     lambda x: x.fillna(x.median()) if x.notnan().any() else 0
@@ -75,23 +75,24 @@ class Preprocessor:
         return df
 
     def preprocess(self, df):
+        df = df.drop("OBJECT_ID", axis=1)
         insr_begin = pd.to_datetime(
             df["INSR_BEGIN"], errors="coerce", format="%d-%b-%y"
         )
-        df["BEGIN_YEAR"] = insr_begin.dt.year
-        df["BEGIN_MONTH"] = insr_begin.dt.month
-        df["BEGIN_DAY"] = insr_begin.dt.day
+        df["BEGIN_YEAR"] = insr_begin.dt.year.astype('float')
+        df["BEGIN_MONTH"] = insr_begin.dt.month.astype('float')
+        df["BEGIN_DAY"] = insr_begin.dt.day.astype('float')
         df = df.drop("INSR_BEGIN", axis=1)
 
         insr_end = pd.to_datetime(df["INSR_END"], errors="coerce", format="%d-%b-%y")
-        df["END_YEAR"] = insr_end.dt.year
-        df["END_MONTH"] = insr_end.dt.month
-        df["END_DAY"] = insr_end.dt.day
+        df["END_YEAR"] = insr_end.dt.year.astype('float')
+        df["END_MONTH"] = insr_end.dt.month.astype('float')
+        df["END_DAY"] = insr_end.dt.day.astype('float')
         df = df.drop("INSR_END", axis=1)
 
         df["EFFECTIVE_YR"] = pd.to_numeric(df["EFFECTIVE_YR"], errors="coerce")
         if df["EFFECTIVE_YR"].isna().sum() / df.shape[0] < 0.05:
-            df.dropna(subset="EFFECTIVE_YR", inplace=True)
+            df = df.dropna(subset="EFFECTIVE_YR")
         else:
             df["EFFECTIVE_YR"].fillna(0, inplace=True)
 
@@ -100,10 +101,10 @@ class Preprocessor:
             q3 = df[col].quantile(0.75)
             iqr = q3 - q1
             df[col] = df[col].clip(q1 - 1.5 * iqr, q3 + 1.5 * iqr)
+        # df.loc[:, cat_cols] = df[cat_cols].astype(object)
 
         X = df.drop("CLAIM_PAID", axis=1)
-        y = df["CLAIM_PAID"].fillna(0)
-        y = y != 0
+        y = df["CLAIM_PAID"].notnull()
 
         if transformer_path.is_file():
             with open("cache/transformer.pkl", "rb") as f:
@@ -113,7 +114,7 @@ class Preprocessor:
             self.transformer.fit(X)
             with open("cache/transformer.pkl", "wb") as f:
                 pickle.dump(self.transformer, f)
+        print(X.info())
         X = self.transformer.transform(X)
 
         return X, y
-

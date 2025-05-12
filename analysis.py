@@ -116,4 +116,3 @@ class Analyser:
         with open("cache/data_quality.pkl", "rb") as f:
             stats = pickle.load(f)
         return stats
-

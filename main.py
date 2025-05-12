@@ -29,7 +29,7 @@ if __name__ == "__main__":
         X, _ = prep.preprocess(df)
         model = Maintainer.load_main_model()
         pred = model.predict(X)
-        print(pred)
+        print(pd.DataFrame(pred).value_counts())
     elif args.mode == "update":
         batchsize = 2000  # adjust how much data is added
         storage = Storage(batchsize)
@@ -50,8 +50,7 @@ if __name__ == "__main__":
         X, y = prep.preprocess(df)
         print(f"PREPROCESSED DATA\nX:\n{X}\ny:\n{y}")
 
-        # model = VehicleInsuranceModel()
-        model = SVC()
+        model = VehicleInsuranceModel()
         model.fit(X, y)
 
         validator = Validator()
@@ -65,7 +64,7 @@ if __name__ == "__main__":
         print("DATA QUALITY:")
         for dict in stats:
             print(dict)
-        print("CROSS VALIDATION SCORES:")
-        with open("cache/cv.pkl", "rb") as f:
-            cv = pickle.load(f)
-        print(cv)
+        # print("CROSS VALIDATION SCORES:")
+        # model = Maintainer.load_main_model()
+        # cv = Validator.cv(model, X, y)
+        # print(cv)
