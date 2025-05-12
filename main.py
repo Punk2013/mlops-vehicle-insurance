@@ -37,6 +37,7 @@ if __name__ == "__main__":
         print(f"NEW BATCH:\n{batch}")
         storage.load_train_data()
         storage.add_batch(batch)
+        storage.save_batch(batch)
         print(f"ORIGINAL DATA WITH NEW BATCH:\n{storage.train_data}")
 
         Analyser.data_quality(storage.train_data)
@@ -58,7 +59,6 @@ if __name__ == "__main__":
         print(scores)
 
         Maintainer.save_main_model(model)
-        storage.save_train_data()
     elif args.mode == "summary":
         stats = Analyser.get_stats()
         print("DATA QUALITY:")

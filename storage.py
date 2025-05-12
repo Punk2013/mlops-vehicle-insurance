@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -9,7 +10,7 @@ rows_read_path = Path("cache/rows_read.txt")
 class Storage:
     def __init__(self, batchsize):
         self.path = data_path / Path("motor_data11-14lats.csv")
-        self.train_path = Path("cache/train_data.pkl")
+        self.train_path = Path("cache/train_data/")
 
         self.train_data = pd.DataFrame()
         self.batchsize = batchsize
@@ -28,16 +29,36 @@ class Storage:
         return next(self.reader)
 
     def load_train_data(self):
-        if self.train_path.is_file():
-            self.train_data = pd.read_pickle(self.train_path)
+        batch_files = list(self.train_path.glob("batch_*.pkl"))
+        if not batch_files:
+            return
+
+        def extract_startrow(file: Path) -> int:
+            match = re.search(r"batch_(\d+)-(\d+)\.pkl", file.name)
+            if not match:
+                raise ValueError(f"Invalid filename format: {file.name}")
+            return int(match.group(1))
+
+        batch_files_sorted = sorted(batch_files, key=extract_startrow)
+        self.train_data = pd.concat(
+            [pd.read_pickle(f) for f in batch_files_sorted], ignore_index=True
+        )
 
     def add_batch(self, batch):
         self.train_data = pd.concat([self.train_data, batch], axis=0, ignore_index=True)
 
-    def save_train_data(self):
-        self.train_data.to_pickle(self.train_path)
+    def save_batch(self, batch):
+        read = 0
+        if rows_read_path.is_file():
+            with open(rows_read_path, "r") as rows:
+                read = int(rows.read())
+
+        batch.to_pickle(
+            self.train_path / Path(f"batch_{read + 1}-{read + self.batchsize}.pkl")
+        )
+
         with open(rows_read_path, "w") as rows:
-            rows.write("%d" % self.train_data.shape[0])
+            rows.write(f"{read + self.batchsize}")
 
     @staticmethod
     def calc_metaparams(self, batch):
