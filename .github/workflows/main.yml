@@ -44,9 +44,12 @@ jobs:
         branch: main
       continue-on-error: true  # Игнорируем ошибку, если артефакт не найден
 
-    - name: Run training script with periodic artifact generation
-      run: python main.py -mode update > training.log # Запускаем одну итерацию обучения
-        
+    - name: Run training script required number of times
+      run: |
+        for i in {1..3}; do
+          python main.py -mode update > training.log # Запускаем одну итерацию обучения
+        done
+      
     - name: Upload new model artifacts
       uses: actions/upload-artifact@v4
       with:
