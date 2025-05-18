@@ -9,6 +9,8 @@ on:
       - main
   schedule:
     - cron: "0 10 * * *"     # Запуск каждый день в 10:00
+  workflow_dispatch:
+  
 jobs:
   background-training:
     runs-on: ubuntu-latest
