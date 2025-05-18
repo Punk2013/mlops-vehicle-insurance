@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CRON Background Training
 
 on:
   push:
@@ -7,9 +7,10 @@ on:
   pull_request:
     branches:
       - main
-
+  schedule:
+    - cron: "0 10 * * *"     # Запуск каждый день в 10:00
 jobs:
-  test-and-log:
+  background-training:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,9 +22,40 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run training script
-      run: |
-        python main.py -mode update > training.log
+    - name: Attempt to download previous model artifacts
+      uses: dawidd6/action-download-artifact@v6
+      with:
+        workflow: main.yml
+        name: model-artifacts
+        path: models  # Извлекаем артефакты в папку models
+        workflow_conclusion: success
+        branch: main
+      continue-on-error: true  # Игнорируем ошибку, если артефакт не найден
+
+    - name: Attempt to download previous cache artifacts
+      uses: dawidd6/action-download-artifact@v6
+      with:
+        workflow: main.yml
+        name: cache-artifacts
+        path: cache  # Извлекаем артефакты в папку cache
+        workflow_conclusion: success
+        branch: main
+      continue-on-error: true  # Игнорируем ошибку, если артефакт не найден
+
+    - name: Run training script with periodic artifact generation
+      run: python main.py -mode update > training.log # Запускаем одну итерацию обучения
+        
+    - name: Upload new model artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: model-artifacts
+        path: models/
+
+    - name: Upload new cache artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: cache-artifacts
+        path: cache/
 
     - name: Upload logs
       uses: actions/upload-artifact@v4
